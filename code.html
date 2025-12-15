@@ -1,0 +1,1391 @@
+###丰富度
+> glm_richness_tw <- glm(tot.re.richness_ruqin ~ way * year,
++                        family = tweedie(var.power = 1.5, link.power = 0),
++                        data = dd)
+> 
+> anova(glm_richness_tw, test = "Chisq")
+Analysis of Deviance Table
+
+Model: Tweedie, link: mu^0
+
+Response: tot.re.richness_ruqin
+
+Terms added sequentially (first to last)
+
+
+         Df Deviance Resid. Df Resid. Dev       Pr(>Chi)    
+NULL                        41     19.102                   
+way       1   0.6190        40     18.483        0.04166 *  
+year      1   5.2467        39     13.237 0.000000003024 ***
+way:year  1   3.5187        38      9.718 0.000001194437 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> summary(glm_richness_tw)
+
+Call:
+glm(formula = tot.re.richness_ruqin ~ way * year, family = tweedie(var.power = 1.5, 
+    link.power = 0), data = dd)
+
+Coefficients:
+             Estimate Std. Error t value      Pr(>|t|)    
+(Intercept) -3.205632   0.399106  -8.032 0.00000000103 ***
+wayTR        1.886360   0.477360   3.952      0.000326 ***
+year        -0.008403   0.017928  -0.469      0.641949    
+wayTR:year  -0.132700   0.026319  -5.042 0.00001164320 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for Tweedie family taken to be 0.1491864)
+
+    Null deviance: 19.102  on 41  degrees of freedom
+Residual deviance:  9.718  on 38  degrees of freedom
+AIC: NA
+
+Number of Fisher Scoring iterations: 10
+
+
+
+
+
+###盖度
+> glm_coverage_tw <- glm(tot.re.cover_ruqin ~ way * year,
++                        family = tweedie(var.power = 1.5, link.power = 0),
++                        data = dd)
+> 
+> anova(glm_coverage_tw, test = "Chisq")
+Analysis of Deviance Table
+
+Model: Tweedie, link: mu^0
+
+Response: tot.re.cover_ruqin
+
+Terms added sequentially (first to last)
+
+
+         Df Deviance Resid. Df Resid. Dev          Pr(>Chi)    
+NULL                        41    25.4041                      
+way       1   2.2151        40    23.1891         0.0022021 ** 
+year      1  11.1893        39    11.9997 0.000000000005946 ***
+way:year  1   2.6629        38     9.3368         0.0007886 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> summary(glm_coverage_tw)
+
+Call:
+glm(formula = tot.re.cover_ruqin ~ way * year, family = tweedie(var.power = 1.5, 
+    link.power = 0), data = dd)
+
+Coefficients:
+            Estimate Std. Error t value   Pr(>|t|)    
+(Intercept) -2.90848    0.56891  -5.112 0.00000934 ***
+wayTR        1.96296    0.67074   2.927    0.00576 ** 
+year        -0.06830    0.03007  -2.271    0.02887 *  
+wayTR:year  -0.17725    0.05113  -3.467    0.00132 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for Tweedie family taken to be 0.236324)
+
+    Null deviance: 25.4041  on 41  degrees of freedom
+Residual deviance:  9.3368  on 38  degrees of freedom
+AIC: NA
+
+Number of Fisher Scoring iterations: 13
+
+
+
+###fig.1a
+library(dplyr)
+library(ggplot2)
+library(statmod)   # 提供 tweedie family
+library(broom)
+dat_plot <- dd %>%
+  mutate(
+    year_num = as.numeric(year),
+    way      = factor(way, levels = c("RG","TR"))
+  )
+
+dat_RG <- filter(dat_plot, way == "RG")
+dat_TR <- filter(dat_plot, way == "TR")
+
+## 2. 拟合 Tweedie GLM（RG / TR 各一条）------------------------
+
+# RG
+x_RG <- log(dat_RG$year_num)
+y_RG <- dat_RG$tot.re.richness_ruqin
+
+fm_RG <- glm(
+  y_RG ~ x_RG,
+  family = statmod::tweedie(var.power = 1.5, link.power = 0),
+  data   = data.frame(y_RG = y_RG, x_RG = x_RG)
+)
+
+tab_RG <- summary(fm_RG)$coefficients
+p_RG   <- tab_RG[2, ncol(tab_RG)]
+
+# TR
+x_TR <- log(dat_TR$year_num)
+y_TR <- dat_TR$tot.re.richness_ruqin
+
+fm_TR <- glm(
+  y_TR ~ x_TR,
+  family = statmod::tweedie(var.power = 1.5, link.power = 0),
+  data   = data.frame(y_TR = y_TR, x_TR = x_TR)
+)
+
+tab_TR <- summary(fm_TR)$coefficients
+p_TR   <- tab_TR[2, ncol(tab_TR)]
+
+## 3. 总体模型：不分 RG/TR，所有点一起 -------------------------
+
+x_all <- log(dat_plot$year_num)
+y_all <- dat_plot$tot.re.richness_ruqin
+
+fm_all <- glm(
+  y_all ~ x_all,
+  family = statmod::tweedie(var.power = 1.5, link.power = 0),
+  data   = data.frame(y_all = y_all, x_all = x_all)
+)
+
+tab_all <- summary(fm_all)$coefficients
+p_all   <- tab_all[2, ncol(tab_all)]
+R2_all  <- 1 - fm_all$deviance / fm_all$null.deviance
+cat("Overall Tweedie: R² =", R2_all, ", p =", p_all, "\n")
+
+## 4. 生成预测值 + 置信区间 -----------------------------------
+
+## RG
+new_RG <- data.frame(
+  year_num = seq(min(dat_RG$year_num), max(dat_RG$year_num), length.out = 200)
+)
+pred_RG <- predict(fm_RG,
+                   newdata = data.frame(x_RG = log(new_RG$year_num)),
+                   type = "link", se.fit = TRUE)
+eta_RG <- pred_RG$fit
+se_RG  <- pred_RG$se.fit
+
+new_RG$y_hat  <- exp(eta_RG)
+new_RG$ymin   <- exp(eta_RG - 1.96 * se_RG)   # RG 自己的 CI
+new_RG$ymax   <- exp(eta_RG + 1.96 * se_RG)
+new_RG$way    <- "RG"
+new_RG$signif <- ifelse(p_RG < 0.05, "sig", "ns")
+
+## TR
+new_TR <- data.frame(
+  year_num = seq(min(dat_TR$year_num), max(dat_TR$year_num), length.out = 200)
+)
+pred_TR <- predict(fm_TR,
+                   newdata = data.frame(x_TR = log(new_TR$year_num)),
+                   type = "link", se.fit = TRUE)
+eta_TR <- pred_TR$fit
+se_TR  <- pred_TR$se.fit
+
+new_TR$y_hat  <- exp(eta_TR)
+new_TR$ymin   <- exp(eta_TR - 1.96 * se_TR)   # TR 自己的 CI
+new_TR$ymax   <- exp(eta_TR + 1.96 * se_TR)
+new_TR$way    <- "TR"
+new_TR$signif <- ifelse(p_TR < 0.05, "sig", "ns")
+
+pred_df <- bind_rows(new_RG, new_TR)
+
+## 总体线的预测值 + 95% CI
+new_all <- data.frame(
+  year_num = seq(min(dat_plot$year_num), max(dat_plot$year_num), length.out = 200)
+)
+pred_all <- predict(fm_all,
+                    newdata = data.frame(x_all = log(new_all$year_num)),
+                    type = "link", se.fit = TRUE)
+eta_all <- pred_all$fit
+se_all  <- pred_all$se.fit
+
+new_all$y_hat <- exp(eta_all)
+new_all$ymin  <- exp(eta_all - 1.96 * se_all)
+new_all$ymax  <- exp(eta_all + 1.96 * se_all)
+
+## 5. 画图：散点 + 总体线(黑+灰带) + 分组线(彩色+各自灰带) -----
+
+p <- ggplot(dat_plot, aes(x = year_num,
+                          y = tot.re.richness_ruqin,
+                          color = way)) +
+  # 先画 RG/TR 各自的灰色带（比总体略浅）
+  geom_ribbon(
+    data = pred_df,
+    aes(x = year_num, ymin = ymin, ymax = ymax, group = way),
+    inherit.aes = FALSE,
+    fill = "grey90",
+    alpha = 0.6
+  ) +
+  # 再画总体灰色置信区间（稍深）
+  geom_ribbon(
+    data = new_all,
+    aes(x = year_num, ymin = ymin, ymax = ymax),
+    inherit.aes = FALSE,
+    fill = "grey80",
+    alpha = 0.6
+  ) +
+  # 总体黑色拟合线
+  geom_line(
+    data = new_all,
+    aes(x = year_num, y = y_hat),
+    inherit.aes = FALSE,
+    color = "black",
+    linewidth = 2
+  ) +
+  # 分组 Tweedie 拟合线（显著实线 / 不显著虚线）
+  geom_line(
+    data = pred_df,
+    aes(x = year_num, y = y_hat, linetype = signif),
+    linewidth = 2
+  ) +
+  # 散点
+  geom_point(size = 10) +
+  scale_color_manual(values = c("RG" = "#F8766D", "TR" = "#00BFC4")) +
+  scale_linetype_manual(
+    values = c(sig = "solid", ns = "dashed"),
+    breaks = c("sig", "ns"),
+    labels = c("p < 0.05", "p ≥ 0.05"),
+    name   = "Slope significance"
+  ) +
+  scale_x_continuous(limits = c(0, 45)) +
+  scale_y_continuous(limits = c(-0.05, 0.50)) +
+  labs(
+    x = "Restoration age (year)",
+    y = "Relative richness of invasive plants",
+    color = "Restoration type"
+  ) +
+  theme(
+    panel.background  = element_rect(fill = "white", colour = NA),
+    plot.background   = element_rect(fill = "white", colour = NA),
+    panel.border      = element_rect(color = "black", linewidth = 1.8, fill = NA),
+    axis.text         = element_text(size = 22),
+    axis.ticks.length = unit(0.25, "cm"),
+    axis.ticks        = element_line(color = "black", linewidth = 1),
+    axis.title        = element_text(size = 18),
+    legend.title      = element_text(size = 16),
+    legend.text       = element_text(size = 14)
+  )
+
+p
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+ fm <- glm(tot.re.richness_ruqin ~ log(as.numeric(year),
+               family = tweedie(var.power = 1.5, link.power = 0),
+               data = dd)
+
+
+
+
+setwd("D:/博士期间/八大公山/赵心玥/赵心玥/数据/功能多样性")
+
+dd = read.csv("汇总.csv",fileEncoding= "UTF-8")
+dd$log.year =log(dd$year)
+dd$way <- factor(dd$way, levels = c("RG", "TR"))
+library(statmod) 
+
+ names.val = colnames(dd)[c(3,5,8:14,21,51,53,56,62,63,82:87,89:103)]
+ 
+ ff = dd[, c("tot.re.richness_ruqin","tot.re.cover_ruqin")]
+ ee = dd[, names.val]
+
+ result.r2 = matrix(NA, nrow = ncol(ee), ncol = ncol(ff))
+ result.p  = matrix(NA, nrow = ncol(ee), ncol = ncol(ff))
+ result.ef = matrix(NA, nrow = ncol(ee), ncol = ncol(ff))
+
+ colnames(result.r2) = colnames(result.p) = colnames(result.ef) = colnames(ff)
+  rownames(result.r2) = rownames(result.p) = rownames(result.ef) = colnames(ee)
+  
+    for (j in 1:ncol(ff)) {
+      
+         y <- (ff[, j])
+          
+            for (i in 1:ncol(ee)) {
+                x <- ee[, i]
+                
+                  dat <- data.frame(y = y, x = x)
+                  
+                    # Tweedie GLM：var.power=1.5，link.power=0（log 链接）
+                    fm <- glm(y ~ x,
+                                              family = tweedie(var.power = 1.5, link.power = 0),
+                                              data = dat)
+                    
+                      # 伪R2：1 - deviance / null.deviance
+                   r2 <- 1 - fm$deviance / fm$null.deviance
+                     
+                        # 回归系数和 p 值（第二行是自变量 x）
+                        ef <- summary(fm)$coefficients[2, 1]
+                        p  <- summary(fm)$coefficients[2, 4]
+                        
+                         result.r2[i, j] <- r2
+                          result.ef[i, j] <- ef
+                          result.p[i, j]  <- p
+    
+print(i)
+  }
+}
+  result.r2
+  result.p
+  result.ef
+  
+ [1] 1
+[1] 2
+[1] 3
+[1] 4
+[1] 5
+[1] 6
+[1] 7
+[1] 8
+[1] 9
+[1] 10
+[1] 11
+[1] 12
+[1] 13
+[1] 14
+[1] 15
+[1] 16
+[1] 17
+[1] 18
+[1] 19
+[1] 20
+[1] 21
+[1] 22
+[1] 23
+[1] 24
+[1] 25
+[1] 26
+[1] 27
+[1] 28
+[1] 29
+[1] 30
+[1] 31
+[1] 32
+[1] 33
+[1] 34
+[1] 35
+[1] 36
+[1] 1
+[1] 2
+[1] 3
+[1] 4
+[1] 5
+[1] 6
+[1] 7
+[1] 8
+[1] 9
+[1] 10
+[1] 11
+[1] 12
+[1] 13
+[1] 14
+[1] 15
+[1] 16
+[1] 17
+[1] 18
+[1] 19
+[1] 20
+[1] 21
+[1] 22
+[1] 23
+[1] 24
+[1] 25
+[1] 26
+[1] 27
+[1] 28
+[1] 29
+[1] 30
+[1] 31
+[1] 32
+[1] 33
+[1] 34
+[1] 35
+[1] 36
+>   result.r2
+                      tot.re.richness_ruqin tot.re.cover_ruqin
+way                            0.0324026465       8.719282e-02
+year                           0.3070613516       5.255446e-01
+pH                             0.0277535650       5.550232e-02
+TC                             0.3307495178       4.337016e-01
+TN                             0.3136810547       3.261427e-01
+TP                             0.0646669034       2.411852e-01
+C比N                           0.1324242571       2.503203e-01
+C比P                           0.0082168126       3.541489e-03
+N比P                           0.0007478139       4.439437e-04
+含水率                         0.0064768323       6.108245e-02
+tot.richness_qiao              0.3628196002       2.790330e-01
+tot.cover_qiao                 0.2849147061       2.271721e-01
+tot.richness_herb              0.0007311765       2.824299e-03
+tot.richness_guan_all          0.3202889722       4.976743e-01
+tot.cover_guan_all             0.1434258015       2.260593e-01
+herb_Faith_PD                  0.0766512456       1.285350e-01
+herb_ses.mpd_PD                0.1132567060       1.858320e-01
+mpd.谱系_herb                  0.0692913467       1.271037e-01
+herb_FD                        0.1003250122       1.377853e-01
+mpd.功能_herb                  0.0253043461       8.456722e-02
+herb_ses.mpd.功能              0.0058794873       9.120467e-05
+guan_Faith_PD                  0.2638518724       4.516559e-01
+guan_ses.mpd_谱系              0.0093145515       2.674161e-02
+guan_mpd.谱系                  0.1213744546       1.150223e-01
+guan_FD                        0.2545431595       3.991028e-01
+guan_mpd.功能                  0.1933317860       2.536234e-01
+guan_ses.mpd.功能              0.0053338540       5.470656e-02
+qiao_Faith_PD                  0.3120152231       2.510779e-01
+qiao_ses.mpd_谱系              0.0024851237       4.492094e-03
+qiao_mpd.谱系                  0.0462813255       3.269644e-02
+qiao_FD                        0.2942579903       2.825111e-01
+qiao_mpd.功能                  0.0986672790       1.461333e-01
+qiao_ses.mpd.功能              0.0001444291       2.172453e-03
+PC1                            0.2709278089       3.770052e-01
+PC2                            0.0264417014       8.420070e-02
+PC3                            0.0405156620       1.056213e-01
+>   result.p
+                      tot.re.richness_ruqin tot.re.cover_ruqin
+way                            1.309080e-01       6.483676e-02
+year                           2.288465e-05       4.464049e-07
+pH                             1.749164e-01       1.272774e-01
+TC                             3.170849e-06       2.120544e-05
+TN                             9.962119e-06       4.692764e-04
+TP                             4.196606e-02       2.654938e-04
+C比N                           3.684363e-03       3.789675e-03
+C比P                           4.707680e-01       6.992736e-01
+N比P                           8.005036e-01       8.814264e-01
+含水率                         5.407138e-01       1.398508e-01
+tot.richness_qiao              2.783936e-04       2.590913e-02
+tot.cover_qiao                 1.232221e-05       9.840396e-03
+tot.richness_herb              8.220132e-01       7.264698e-01
+tot.richness_guan_all          5.299820e-05       6.678387e-06
+tot.cover_guan_all             3.678853e-03       2.246349e-02
+herb_Faith_PD                  2.603315e-02       5.088839e-02
+herb_ses.mpd_PD                4.157095e-03       2.610749e-02
+mpd.谱系_herb                  3.564608e-02       4.875322e-02
+herb_FD                        1.089175e-02       2.308805e-02
+mpd.功能_herb                  1.938042e-01       7.332526e-02
+herb_ses.mpd.功能              5.235572e-01       9.504883e-01
+guan_Faith_PD                  2.099320e-04       8.888477e-06
+guan_ses.mpd_谱系              4.345977e-01       2.878852e-01
+guan_mpd.谱系                  7.314995e-03       4.279243e-02
+guan_FD                        1.370512e-04       1.251606e-05
+guan_mpd.功能                  2.575420e-03       6.961702e-03
+guan_ses.mpd.功能              5.325134e-01       1.091367e-01
+qiao_Faith_PD                  6.552517e-06       3.910212e-03
+qiao_ses.mpd_谱系              6.775916e-01       6.763527e-01
+qiao_mpd.谱系                  9.910369e-02       3.137255e-01
+qiao_FD                        1.378949e-05       1.964467e-03
+qiao_mpd.功能                  3.708681e-02       2.806915e-02
+qiao_ses.mpd.功能              9.230505e-01       7.806930e-01
+PC1                            1.608445e-05       2.510390e-05
+PC2                            1.345488e-01       1.886320e-02
+PC3                            9.458205e-02       3.400086e-02
+>   result.ef
+                      tot.re.richness_ruqin tot.re.cover_ruqin
+way                             0.529443149        1.110219018
+year                           -0.070490184       -0.138224085
+pH                              0.258098278        0.497563984
+TC                             -0.661515549       -1.299155685
+TN                            -10.049956843      -15.742212971
+TP                             -0.879173171       -2.485609950
+C比N                           -0.274832245       -0.561809222
+C比P                           -0.023375966       -0.020606791
+N比P                           -0.037089613       -0.036454104
+含水率                         -2.036250549       -7.702357231
+tot.richness_qiao              -0.353763991       -0.447988182
+tot.cover_qiao                 -0.003976325       -0.004173057
+tot.richness_herb              -0.008642929       -0.022980143
+tot.richness_guan_all          -0.120381213       -0.228794676
+tot.cover_guan_all             -0.044141807       -0.082063779
+herb_Faith_PD                  -0.005223148       -0.008158523
+herb_ses.mpd_PD                -0.425547448       -0.646010616
+mpd.谱系_herb                  -0.005111867       -0.008382327
+herb_FD                        -9.140456239      -15.646494706
+mpd.功能_herb                   5.491611326       12.501903084
+herb_ses.mpd.功能              -0.122594702        0.020032854
+guan_Faith_PD                  -0.001064900       -0.002068123
+guan_ses.mpd_谱系               0.340759573       -0.736224476
+guan_mpd.谱系                  -0.005592127       -0.007241189
+guan_FD                        -0.991928966       -1.818091570
+guan_mpd.功能                  -8.308008232      -12.943761830
+guan_ses.mpd.功能              -0.133954919       -0.595023259
+qiao_Faith_PD                  -0.002013340       -0.002248222
+qiao_ses.mpd_谱系              -0.055769158       -0.095360544
+qiao_mpd.谱系                  -0.001272388       -0.001321317
+qiao_FD                        -3.231415756       -4.113614392
+qiao_mpd.功能                  -8.608484832      -15.973366520
+qiao_ses.mpd.功能              -0.020814198       -0.102846927
+PC1                            -0.676007833       -1.262088484
+PC2                             0.189003577        0.435403714
+PC3                             0.281933151        0.606444283
+> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+setwd("E:/学生/张恒瑞/小论文/投稿")
+
+dd = read.csv("汇总2.csv",fileEncoding= "GBK")
+
+
+##install.packages(c("glmmTMB", "MuMIn"))  # 如果未安装
+
+
+library(glmmTMB)  # 支持 Tweedie 分布
+library(MuMIn)    # 提供 dredge 函数
+
+
+fm1 = glmmTMB(tot.re.richness_ruqin~tot.richness_qiao,data=dd, family = tweedie(link = "log"),REML = TRUE)
+r2_result <- r2(fm)
+
+
+
+library(statmod) 
+
+fm <- glm(tot.re.richness_ruqin~tot.richness_qiao,family = tweedie(var.power = 1.5, link.power = 0),data=dd)
+summary(fm)
+library(tweedie)
+AICtweedie(fm)
+
+
+k <- length(coef(fm)) + 1
+
+n <- nobs(fm) 
+
+aicc_value <- AICtweedie(fm) + (2 * k * (k + 1)) / (n - k - 1)
+print(aicc_value)
+
+
+
+
+
+
+
+library(tweedie)
+library(MuMIn)
+library(statmod)
+
+# 定义自定义排名函数（基于 AICc）
+rank_AICc <- function(model) {
+  k <- length(coef(model)) + 1  # 参数数量（固定 p 时，phi 是额外参数）
+  n <- nobs(model)              # 样本量
+  aic <- AICtweedie(model)      # 原始 AIC
+  aicc <- aic + (2 * k * (k + 1)) / (n - k - 1)  # 计算 AICc
+  return(aicc)
+}
+
+# 拟合全局模型（包含所有候选变量）
+fm <- glm(
+  tot.re.richness_ruqin ~ tot.richness_qiao + tot.richness_guan + tot.richness_herb+tot.cover_qiao+tot.cover_guan_all
++herb_Faith_PD+herb_ses.mpd_PD+mpd.谱系_herb+herb_FD+mpd.功能_herb+herb_ses.mpd.功能
++guan_Faith_PD+guan_ses.mpd_谱系+guan_mpd.谱系+guan_FD+guan_mpd.功能+guan_ses.mpd.功能,
+  family = tweedie(var.power = 1.5, link.power = 0),
+  data = dd,
+  na.action = na.fail  # 确保 dredge 能处理缺失值
+)
+
+# 运行 dredge，按 AICc 排序
+dredge_results <- dredge(
+  fm,
+  rank = rank_AICc,  # 使用自定义的 AICc 排名函数
+  extra = list(AICc = function(x) rank_AICc(x))  # 在结果中显示 AICc
+)
+
+# 查看按 AICc 排序的结果
+ms2 = subset(dredge_results, delta < 2)
+
+ms2
+Global model call: glm(formula = tot.re.richness_ruqin ~ tot.richness_qiao + tot.richness_guan + 
+    tot.richness_herb + tot.cover_qiao + tot.cover_guan_all + 
+    herb_Faith_PD + herb_ses.mpd_PD + mpd.谱系_herb + herb_FD + 
+    mpd.功能_herb + herb_ses.mpd.功能 + guan_Faith_PD + guan_ses.mpd_谱系 + 
+    guan_mpd.谱系 + guan_FD + guan_mpd.功能 + guan_ses.mpd.功能, 
+    family = tweedie(var.power = 1.5, link.power = 0), data = dd, 
+    na.action = na.fail)
+---
+Model selection table 
+        (Int) gun_Fth_PD  gun_FD hrb_Fth_PD hrb_FD hrb_ses.mpd.功能 mpd.谱系_hrb tot.cvr_gun_all tot.cvr_qia tot.rch_gun tot.rch_hrb tot.rch_qia   AICc df rank_AICc delta weight
+77825  -1.936                                                                           -0.03874   -0.002806                             -0.1775 -36.73  4     -36.7  0.00  0.134
+77889  -3.543                      0.004967                                             -0.05017   -0.004144                             -0.1758 -36.04  5     -36.0  0.69  0.095
+79873  -3.468                                                           0.004689        -0.04883   -0.003989                             -0.1755 -35.85  5     -35.8  0.88  0.087
+28737  -4.455                      0.008243                                             -0.03691   -0.005504     -0.1077                         -35.66  5     -35.7  1.07  0.079
+24641  -4.198                      0.006981                                                        -0.004744     -0.1530                         -35.38  4     -35.4  1.35  0.068
+77890  -3.972 -0.0005425           0.007198                                             -0.03981   -0.004347                             -0.1436 -35.02  6     -35.0  1.71  0.057
+30721  -4.259                                                           0.007546        -0.03551   -0.005229     -0.1022                         -35.01  5     -35.0  1.72  0.057
+77891  -3.833            -0.4359   0.006281                                             -0.04386   -0.004159                             -0.1478 -34.99  6     -35.0  1.74  0.056
+24897  -5.060                      0.009246                 -0.3684                                -0.005578     -0.1558                         -34.95  5     -34.9  1.78  0.055
+26625  -4.053                                                           0.006471                   -0.004545     -0.1473                         -34.94  4     -34.9  1.79  0.055
+110593 -1.232                                                                           -0.03907   -0.002901                -0.03933     -0.1786 -34.87  5     -34.9  1.86  0.053
+94273  -4.095                      0.006943                                             -0.03796   -0.004514     -0.0723                 -0.1307 -34.85  6     -34.8  1.88  0.052
+12354  -4.294 -0.0007597           0.008646                                             -0.04238   -0.005509                                     -34.80  5     -34.8  1.93  0.051
+77827  -1.849            -0.2758                                                        -0.03305   -0.002592                             -0.1598 -34.76  5     -34.8  1.97  0.050
+77953  -1.659                                -3.96                                      -0.03754   -0.002324                             -0.1911 -34.73  5     -34.7  2.00  0.049
+Models ranked by rank_AICc(x) 
+
+
+
+
+
+summary(get.models(dredge_results, 1)[[1]])
+
+Call:
+glm(formula = tot.re.richness_ruqin ~ tot.cover_guan_all + tot.cover_qiao + 
+    tot.richness_qiao + 1, family = tweedie(var.power = 1.5, 
+    link.power = 0), data = dd, na.action = na.fail)
+
+Coefficients:
+                     Estimate Std. Error t value Pr(>|t|)    
+(Intercept)        -1.9359257  0.2109847  -9.176 3.53e-11 ***
+tot.cover_guan_all -0.0387400  0.0107374  -3.608 0.000886 ***
+tot.cover_qiao     -0.0028058  0.0007803  -3.596 0.000917 ***
+tot.richness_qiao  -0.1774669  0.0554238  -3.202 0.002758 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for Tweedie family taken to be 0.1594685)
+
+    Null deviance: 19.1024  on 41  degrees of freedom
+Residual deviance:  8.9791  on 38  degrees of freedom
+AIC: NA
+
+Number of Fisher Scoring iterations: 16
+
+fm = glm(formula = tot.re.richness_ruqin ~ tot.cover_guan_all + tot.cover_qiao + 
+    tot.richness_qiao, family = tweedie(var.power = 1.5, 
+    link.power = 0), data = dd, na.action = na.fail)
+
+#伪R2
+library("rsq")
+rsq(fm,adj = TRUE,type = "v")
+[1] 0.6092926
+
+
+
+
+
+fm = glm(formula = tot.re.richness_ruqin ~ tot.cover_guan_all + tot.cover_qiao + 
+    tot.richness_qiao, family = tweedie(var.power = 1.5, 
+    link.power = 0), data = dd, na.action = na.fail)
+
+> vif(fm)
+tot.cover_guan_all     tot.cover_qiao  tot.richness_qiao 
+          1.030186           1.254834           1.249110 
+
+
+	
+
+
+
+
+
+
+
+
+
+
+#全子集回归 re.cover_ruqin 
+# 定义自定义排名函数（基于 AICc）
+rank_AICc <- function(model) {
+  k <- length(coef(model)) + 1  # 参数数量（固定 p 时，phi 是额外参数）
+  n <- nobs(model)              # 样本量
+  aic <- AICtweedie(model)      # 原始 AIC
+  aicc <- aic + (2 * k * (k + 1)) / (n - k - 1)  # 计算 AICc
+  return(aicc)
+}
+
+# 拟合全局模型（包含所有候选变量）
+fm <- glm(
+  tot.re.cover_ruqin ~ tot.richness_qiao + tot.richness_guan + tot.richness_herb+tot.cover_qiao+tot.cover_guan_all
++herb_Faith_PD+herb_ses.mpd_PD+mpd.谱系_herb+herb_FD+mpd.功能_herb+herb_ses.mpd.功能
++guan_Faith_PD+guan_ses.mpd_谱系+guan_mpd.谱系+guan_FD+guan_mpd.功能+guan_ses.mpd.功能,
+  family = tweedie(var.power = 1.5, link.power = 0),
+  data = dd,
+  na.action = na.fail  # 确保 dredge 能处理缺失值
+)
+
+# 运行 dredge，按 AICc 排序
+dredge_results <- dredge(
+  fm,
+  rank = rank_AICc,  # 使用自定义的 AICc 排名函数
+  extra = list(AICc = function(x) rank_AICc(x))  # 在结果中显示 AICc
+)
+
+# 查看按 AICc 排序的结果
+ms2 = subset(dredge_results, delta < 2)
+ summary(get.models(dredge_results, 1)[[1]])
+
+
+fm_best = glm(formula = tot.re.richness_ruqin ~ tot.cover_guan_all + tot.cover_qiao + 
+     tot.richness_qiao, family = tweedie(var.power = 1.5, 
+     link.power = 0), data = dd, na.action = na.fail)
+
+library("rsq")
+
+rsq(fm_best,adj = TRUE,type = "v")
+
+
+
+ms2 
+Global model call: glm(formula = tot.re.cover_ruqin ~ tot.richness_qiao + tot.richness_guan + 
+    tot.richness_herb + tot.cover_qiao + tot.cover_guan_all + 
+    herb_Faith_PD + herb_ses.mpd_PD + mpd.谱系_herb + herb_FD + 
+    mpd.功能_herb + herb_ses.mpd.功能 + guan_Faith_PD + guan_ses.mpd_谱系 + 
+    guan_mpd.谱系 + guan_FD + guan_mpd.功能 + guan_ses.mpd.功能, 
+    family = tweedie(var.power = 1.5, link.power = 0), data = dd, 
+    na.action = na.fail)
+---
+Model selection table 
+        (Int) gun_mpd.谱系 hrb_Fth_PD hrb_FD hrb_ses.mpd.功能 hrb_ses.mpd_PD mpd.谱系_hrb tot.cvr_qia tot.rch_gun tot.rch_hrb   AICc df rank_AICc delta weight
+27329 -6.0310                0.073550 -16.90                         -0.5816     -0.05871   -0.003580     -0.3340             -72.55  7     -72.6  0.00  0.260
+49537  1.2640                         -18.57           0.5007                                             -0.3017     -0.1095 -71.19  5     -71.2  1.36  0.132
+17089 -5.0930                0.011420 -20.42                         -0.6617                              -0.3079             -70.93  5     -70.9  1.62  0.115
+57345  0.5490                                                                               -0.003012     -0.2743     -0.1434 -70.63  4     -70.6  1.92  0.100
+19137 -5.0160                0.052810 -21.59                         -0.7247     -0.04137                 -0.3212             -70.62  6     -70.6  1.93  0.099
+57481  0.7923     0.004255            -11.21                                                -0.002436     -0.3177     -0.1504 -70.62  6     -70.6  1.93  0.099
+25281 -5.7780                0.013620 -16.65                         -0.5396                -0.002459     -0.3123             -70.60  6     -70.6  1.95  0.098
+57537 -1.4080                0.006398 -10.82                                                -0.003453     -0.3174     -0.1056 -70.59  6     -70.6  1.96  0.098
+
+
+
+
+ summary(get.models(dredge_results, 1)[[1]])
+
+Call:
+glm(formula = tot.re.cover_ruqin ~ herb_Faith_PD + herb_FD + 
+    herb_ses.mpd_PD + mpd.谱系_herb + tot.cover_qiao + tot.richness_guan + 
+    1, family = tweedie(var.power = 1.5, link.power = 0), data = dd, 
+    na.action = na.fail)
+
+Coefficients:
+                    Estimate Std. Error t value Pr(>|t|)    
+(Intercept)        -6.030553   1.580216  -3.816 0.000529 ***
+herb_Faith_PD       0.073549   0.030709   2.395 0.022104 *  
+herb_FD           -16.900126   5.905576  -2.862 0.007066 ** 
+herb_ses.mpd_PD    -0.581643   0.253510  -2.294 0.027884 *  
+mpd.谱系_herb      -0.058713   0.030195  -1.944 0.059908 .  
+tot.cover_qiao     -0.003580   0.001534  -2.334 0.025437 *  
+tot.richness_guan  -0.333976   0.056183  -5.944 9.14e-07 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for Tweedie family taken to be 0.2259271)
+
+    Null deviance: 25.4041  on 41  degrees of freedom
+Residual deviance:  7.1995  on 35  degrees of freedom
+AIC: NA
+
+
+fm_best = glm(formula = tot.re.cover_ruqin ~ herb_Faith_PD+ herb_FD +herb_ses.mpd_PD+ mpd.谱系_herb+tot.richness_guan
+ + tot.cover_qiao , family = tweedie(var.power = 1.5, link.power = 0), data = dd, na.action = na.fail)
+ 
+ vif(fm_best)
+ herb_Faith_PD           herb_FD   herb_ses.mpd_PD     mpd.谱系_herb tot.richness_guan    tot.cover_qiao 
+       149.345061          1.536718          2.435116        136.273453          1.485911          2.328753 
+
+fm_best = glm(formula = tot.re.cover_ruqin ~  herb_FD +herb_ses.mpd.功能+tot.richness_guan+tot.richness_herb
+, family = tweedie(var.power = 1.5, link.power = 0), data = dd, na.action = na.fail)
+ 
+ vif(fm_best)
+   herb_FD herb_ses.mpd.功能 tot.richness_guan tot.richness_herb 
+         1.259811          1.260891          1.082305          1.091510 
+
+install.packages("rsq")
+library("rsq")
+
+rsq(fm_best,adj = TRUE,type = "v")
+[1] 0.6536838
+
+
+
+fm_best = glm(formula = tot.re.cover_ruqin ~ scale(herb_FD)+ scale(herb_ses.mpd.功能) +scale(tot.richness_guan)+ scale(tot.richness_herb) , family = tweedie(var.power = 1.5, link.power = 0), data = dd, na.action = na.fail)
+
+library("rsq")
+
+rsq(fm_best,adj = TRUE,type = "v")
+[1] 0.6547738
+
+
+
+
+
+
+#randomForest
+library(randomForest)
+library(fastshap)
+library(ggplot2)
+ee <- dd[, c("tot.re.richness_ruqin", "tot.cover_guan_all",  "tot.cover_qiao", "tot.richness_qiao","PC1","PC2")]
+fit <- randomForest(
+  tot.re.richness_ruqin ~ ., data = ee, importance = TRUE, na.action = na.omit,mtry = 3,ntree = 500)
+
+pfun <- function(object, newdata) {
+  predict(object, newdata = newdata)
+}
+
+set.seed(101)
+shap <- explain( fit,
+                 X = subset(ee, select = -tot.re.richness_ruqin),
+                 nsim = 100,
+                 pred_wrapper = pfun,
+                 adjust = TRUE,
+                 shap_only = TRUE
+)
+
+
+shap2 <- as.data.frame(shap)
+shap2 <- abs(shap2)  # 
+
+mean_shap <- colMeans(shap2, na.rm = TRUE)
+
+chart3 <- data.frame(
+  Var = names(mean_shap),
+  Value = as.numeric(mean_shap)
+)
+
+chart3 <- chart3[order(chart3$Value), ]
+chart3$Var <- factor(chart3$Var, levels = chart3$Var)
+
+pim <- ggplot(chart3) +
+  geom_col(aes(Var, Value),
+           fill="gray",
+           color="transparent",
+           alpha=0.5) +
+  coord_flip() +  # 
+  scale_y_continuous(limits=c(0,max(chart3$Value) * 1.1)) +
+  theme_bw() +  # 
+  theme(
+    axis.title = element_text(size=15, lineheight = 1),
+    axis.text = element_text(color="black", size=15), 
+    panel.border = element_rect(linewidth = 1, color = "black"),  #
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), 
+    axis.ticks.length.y = unit(0.4, "cm"), 
+    axis.ticks.length.x = unit(0.3, "cm"), 
+    axis.ticks.y = element_line(color="black", linewidth = 1),
+    axis.ticks.x = element_line(color="black", linewidth = 1),
+    axis.line.x.top = element_blank(), # 
+    axis.line.y.right = element_blank() # 
+  ) +
+  labs(x=NULL, y="Mean absolute SHAP value")
+pim
+
+
+
+
+dev.copy(jpeg, 'importance_richnes.jpg', height = 4000, width = 6000, res = 800);dev.off()
+
+
+
+
+
+
+
+
+
+
+
+fm_best = glm(formula = tot.re.cover_ruqin ~  herb_FD +herb_ses.mpd.功能+tot.richness_guan+tot.richness_herb
+, family = tweedie(var.power = 1.5, link.power = 0), data = dd, na.action = na.fail)
+
+
+ee <- dd[, c("tot.re.cover_ruqin", "herb_FD","herb_ses.mpd.功能","tot.richness_guan","tot.richness_herb","PC1","PC2")] ##
+fit <- randomForest(
+  tot.re.cover_ruqin ~ ., data = ee, importance = TRUE, na.action = na.omit,mtry = 3,ntree = 500)
+
+pfun <- function(object, newdata) {
+  predict(object, newdata = newdata)
+}
+
+set.seed(101)
+shap <- explain( fit,
+                 X = subset(ee, select = -tot.re.cover_ruqin),
+                 nsim = 100,
+                 pred_wrapper = pfun,
+                 adjust = TRUE,
+                 shap_only = TRUE
+)
+
+
+shap2 <- as.data.frame(shap)
+shap2 <- abs(shap2)  # 
+
+mean_shap <- colMeans(shap2, na.rm = TRUE)
+
+chart3 <- data.frame(
+  Var = names(mean_shap),
+  Value = as.numeric(mean_shap)
+)
+
+chart3 <- chart3[order(chart3$Value), ]
+chart3$Var <- factor(chart3$Var, levels = chart3$Var)
+
+pim <- ggplot(chart3) +
+  geom_col(aes(Var, Value),
+           fill="gray",
+           color="transparent",
+           alpha=0.5) +
+  coord_flip() +  # 
+  scale_y_continuous(limits=c(0,max(chart3$Value) * 1.1)) +
+  theme_bw() +  # 
+  theme(
+    axis.title = element_text(size=18, lineheight = 1),
+    axis.text = element_text(color="black", size=18), 
+    panel.border = element_rect(linewidth = 1, color = "black"),  #
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), 
+    axis.ticks.length.y = unit(0.4, "cm"), 
+    axis.ticks.length.x = unit(0.3, "cm"), 
+    axis.ticks.y = element_line(color="black", linewidth = 1),
+    axis.ticks.x = element_line(color="black", linewidth = 1),
+    axis.line.x.top = element_blank(), # 
+    axis.line.y.right = element_blank() # 
+  ) +
+  labs(x=NULL, y="Mean absolute SHAP value")
+pim
+
+
+
+
+dev.copy(jpeg, 'importance_cover.jpg', height = 4000, width = 6000, res = 800);dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##1  相对丰富度 初始模型  （直接影响因子为多元回归筛选的最佳模型筛选结果）（恢复年限和恢复方式没有直接作用，乔木影响土壤，土壤影响灌木）
+
+dd$log.year = log(dd$year)
+dd$way_num <- as.integer(dd$way == "RG")
+library("piecewiseSEM")
+##library(glmmTMB)
+
+xx = dd[,c("tot.re.richness_ruqin","tot.cover_qiao","tot.cover_guan_all","tot.richness_qiao","PC1","PC2","log.year","way_num")]
+
+m1 <- glm(tot.re.richness_ruqin ~ tot.cover_qiao+tot.cover_guan_all+tot.richness_qiao+ PC1+log.year:way_num +log.year, family = tweedie(var.power = 1.5, link.power = 0),data = xx)#
+m2<- lm(tot.cover_qiao~ log.year*way_num , data = xx)#
+m3<- lm(tot.richness_qiao~ tot.cover_qiao+log.year*way_num , data = xx)#
+m4 <- lm(tot.cover_guan_all ~ tot.richness_qiao+tot.cover_qiao+PC2+PC1+log.year*way_num, data =xx)#
+m5<- lm(PC1 ~ tot.cover_qiao+tot.richness_qiao+log.year*way_num , data = xx)#
+m6<- lm(PC2 ~ tot.cover_qiao+tot.richness_qiao+log.year*way_num , data = xx)#
+
+
+# 合并为 Piecewise SEM  
+sem_model <- psem(m1,m2, m3,m4,m5,m6)  
+model_summary = summary(sem_model,AIC.type = "loglik") ###, 
+
+
+
+
+m1 <- glm(tot.re.richness_ruqin ~ tot.cover_qiao+tot.cover_guan_all+tot.richness_qiao+ PC1, family = tweedie(var.power = 1.5, link.power = 0),data = xx)#
+m2<- lm(tot.cover_qiao~ tot.richness_qiao+log.year:way_num , data = xx)#
+m3<- lm(tot.richness_qiao~ log.year+log.year:way_num , data = xx)#
+m4 <- lm(tot.cover_guan_all ~ tot.cover_qiao+PC2+log.year, data =xx)
+m5<- lm(PC1 ~ tot.cover_qiao+log.year+way_num , data = xx)
+m6<- lm(PC2 ~ tot.cover_qiao+tot.richness_qiao+log.year:way_num , data = xx)#
+
+sem_model <- psem(m1,m2, m3,m4,m5,m6) 
+
+
+
+###sem_model的AICc为各子模型 AICc之和   
+library(tweedie)
+
+k = AIC(sem_model)[[2]];
+n = AIC(sem_model)[[3]];
+AIC.sem_model = AICtweedie(m1) + sum(AIC(m2,m3,m4,m5,m6)[,2])
+aicc <- AIC.sem_model + (2 * k * (k + 1)) / (n - k - 1)  # k=参数数, n=样本量
+aicc
+[1] 1529.033
+
+
+
+
+
+
+
+
+
+######手动计算
+dsep_tests <- dSep(sem_model, conserve = FALSE, interactions =TRUE)  # 获取独立性检验
+valid_p <- na.omit(dsep_tests$P.Value)         # 排除 NA
+C <- -2 * sum(log(valid_p[-c(1,2,3,5,8,9)]))                    # 计算 C
+df <- length(valid_p)-6                         # 自由度
+p_value <- pchisq(C, df, lower.tail = FALSE)   # p 值
+
+# 输出结果
+cat("Fisher's C =", C, "\ndf =", df, "\np =", p_value)
+Fisher's C = 4.99913 
+df = 3 
+p = 0.1718609> 
+
+
+
+
+
+
+
+
+std_coef_with_p <- function(model, data) {
+  # 1. 提取系数名（包括交互项），去掉截距
+  coefs <- coef(model)
+  coef_names <- names(coefs)
+  coef_names <- coef_names[coef_names != "(Intercept)"]
+  
+  # 2. 因变量名
+  y_var <- all.vars(formula(model))[1]
+  
+  # 3. 提取 p 值
+  summ <- summary(model)$coefficients
+  # glm 和 lm 的 summary 都有一张 "Coefficients" 表，只是列名略有不同
+  # 通常最后一列就是 p 值
+  p_col_name <- colnames(summ)[ncol(summ)]
+  p_values <- summ[, p_col_name]
+  
+  # 4. 因变量的标准差
+  if (inherits(model, "glm")) {
+    # 使用线性预测 η 作为“潜在”因变量
+    eta <- predict(model, type = "link")
+    sd_y <- sd(eta, na.rm = TRUE)
+  } else {
+    sd_y <- sd(data[[y_var]], na.rm = TRUE)
+  }
+  
+  # 5. 针对每个自变量（包含交互项）计算 SD(X) 和标准化系数
+  res_list <- lapply(coef_names, function(term) {
+    # 处理交互项：例如 "log.year:way_num"
+    if (grepl(":", term)) {
+      vars <- strsplit(term, ":", fixed = TRUE)[[1]]
+      if (!all(vars %in% names(data))) {
+        warning("交互项变量在 data 中找不到：", term)
+        return(NULL)
+      }
+      # 交互项数值：逐行相乘
+      x_vals <- Reduce(`*`, data[vars])
+      sd_x <- sd(x_vals, na.rm = TRUE)
+    } else {
+      # 主效应
+      if (!term %in% names(data)) {
+        warning("变量在 data 中找不到：", term)
+        return(NULL)
+      }
+      sd_x <- sd(data[[term]], na.rm = TRUE)
+    }
+    
+    if (is.na(sd_x) || sd_x == 0 || is.na(sd_y) || sd_y == 0) {
+      warning("标准差为 NA 或 0，跳过变量：", term)
+      return(NULL)
+    }
+    
+    beta <- coefs[term]
+    beta_std <- beta * (sd_x / sd_y)
+    p_val <- p_values[term]
+    
+    data.frame(
+      Dependent   = y_var,
+      Predictor   = term,
+      Std_Coeff   = round(beta_std, 3),
+      P_Value     = round(p_val, 4),
+      stringsAsFactors = FALSE
+    )
+  })
+  
+  res_list <- res_list[!sapply(res_list, is.null)]
+  if (length(res_list) == 0) return(NULL)
+  do.call(rbind, res_list)
+}
+
+
+
+models <- list(m1, m2, m3, m4,m5,m6)
+model_names <- c("m1", "m2", "m3", "m4", "m5", "m6")
+
+std_results <- lapply(seq_along(models), function(i) {
+  out <- std_coef_with_p(models[[i]], xx)
+  if (!is.null(out)) out$Model <- model_names[i]
+  out
+})
+
+# 去掉 NULL
+std_results <- std_results[!sapply(std_results, is.null)]
+
+# 合并为一个总表
+std_table <- do.call(rbind, std_results)
+
+# 调整列顺序
+std_table <- std_table[, c("Model", "Dependent", "Predictor", "Std_Coeff", "P_Value")]
+
+print(std_table)
+
+
+                   Model             Dependent          Predictor Std_Coeff P_Value
+tot.cover_qiao        m1 tot.re.richness_ruqin     tot.cover_qiao    -0.338  0.0002
+tot.cover_guan_all    m1 tot.re.richness_ruqin tot.cover_guan_all    -0.205  0.0328
+tot.richness_qiao     m1 tot.re.richness_ruqin  tot.richness_qiao    -0.495  0.0294
+PC1                   m1 tot.re.richness_ruqin                PC1    -0.356  0.0094
+tot.richness_qiao1    m2        tot.cover_qiao  tot.richness_qiao     0.668  0.0000
+log.year:way_num      m2        tot.cover_qiao   log.year:way_num     0.662  0.0000
+log.year              m3     tot.richness_qiao           log.year     0.583  0.0000
+log.year:way_num1     m3     tot.richness_qiao   log.year:way_num    -0.482  0.0005
+tot.cover_qiao1       m4    tot.cover_guan_all     tot.cover_qiao    -0.395  0.0044
+PC2                   m4    tot.cover_guan_all                PC2     0.310  0.0182
+log.year1             m4    tot.cover_guan_all           log.year     0.746  0.0000
+tot.cover_qiao2       m5                   PC1     tot.cover_qiao     0.293  0.0459
+log.year2             m5                   PC1           log.year     0.495  0.0003
+way_num               m5                   PC1            way_num    -0.537  0.0002
+tot.cover_qiao3       m6                   PC2     tot.cover_qiao     0.612  0.0018
+tot.richness_qiao2    m6                   PC2  tot.richness_qiao    -0.947  0.0000
+log.year:way_num2     m6                   PC2   log.year:way_num    -0.856  0.0000
+
+ 
+
+
+
+
+
+
+xx = dd[,c("tot.re.cover_ruqin","herb_FD","tot.richness_guan","herb_ses.mpd.功能","tot.richness_herb","PC1","PC2","log.year","way_num","tot.richness_qiao","tot.cover_qiao")]
+
+fm_best = glm(formula = tot.re.cover_ruqin ~  herb_FD +herb_ses.mpd.功能+tot.richness_guan+tot.richness_herb, 
+family = tweedie(var.power = 1.5, link.power = 0), data = dd, na.action = na.fail)
+
+
+
+m1 <- glm(tot.re.cover_ruqin~ herb_FD +herb_ses.mpd.功能+tot.richness_guan+tot.richness_herb+PC1+PC2, family = tweedie(var.power = 1.5, link.power = 0),data = xx)#
+m2<- lm(tot.cover_qiao~ log.year*way_num , data = xx)#
+m3<- lm(tot.richness_qiao~ tot.cover_qiao+log.year*way_num , data = xx)#
+m4 <- lm(tot.cover_guan_all ~ tot.richness_qiao+tot.cover_qiao+PC2+PC1+log.year*way_num, data =xx)#
+m5<- lm(PC1 ~ tot.cover_qiao+tot.richness_qiao+log.year*way_num , data = xx)#
+m6<- lm(PC2 ~ tot.cover_qiao+tot.richness_qiao+log.year*way_num , data = xx)#
+
+
+m1 <- glm(tot.re.cover_ruqin~  tot.cover_qiao+tot.richness_guan+tot.richness_herb+PC1, family = tweedie(var.power = 1.5, link.power = 0),data = xx)#
+##m2<- lm(herb_FD~ tot.cover_qiao, data = xx)#
+m3<- lm(tot.richness_herb~ tot.richness_guan+log.year:way_num+log.year , data = xx)#
+#m3<- lm(tot.richness_herb~ tot.cover_qiao+tot.richness_qiao+tot.richness_guan+tot.cover_guan_all+PC1+PC2+log.year*way_num , data = xx)#
+m4 <- lm(tot.richness_guan ~ tot.richness_qiao+log.year*way_num, data =xx)
+m5<- lm(tot.richness_qiao~ log.year+log.year:way_num , data = xx)#
+m6<- lm(PC1 ~ tot.cover_qiao+log.year+way_num , data = xx)
+m7<- lm(tot.cover_qiao~ tot.richness_qiao+log.year:way_num , data = xx)#
+
+# 合并为 Piecewise SEM  
+sem_model <- psem(m1,m3,m4,m5,m6,m7)  
+model_summary = summary(sem_model,AIC.type = "loglik") ###, 
+
+library(tweedie)
+
+k = AIC(sem_model)[[2]];
+n = AIC(sem_model)[[3]];
+AIC.sem_model = AICtweedie(m1) + sum(AIC(m2,m3,m4,m5,m6)[,2])
+aicc <- AIC.sem_model + (2 * k * (k + 1)) / (n - k - 1)  # k=参数数, n=样本量
+aicc
+853.258
+
+
+
+
+
+
+
+
+######手动计算
+dsep_tests <- dSep(sem_model, conserve = FALSE, interactions =TRUE)  # 获取独立性检验
+valid_p <- na.omit(dsep_tests$P.Value)         # 排除 NA
+C <- -2 * sum(log(valid_p[-c(2,3,4,8)]))                    # 计算 C
+df <- length(valid_p)-4                    # 自由度
+p_value <- pchisq(C, df, lower.tail = FALSE)   # p 值
+
+# 输出结果
+cat("Fisher's C =", C, "\ndf =", df, "\np =", p_value)
+ 
+Fisher's C = 9.709821 
+df = 6 
+p = 0.1374161> 
+
+
+
+
+std_coef_with_p <- function(model, data) {
+  # 1. 提取系数名（包括交互项），去掉截距
+  coefs <- coef(model)
+  coef_names <- names(coefs)
+  coef_names <- coef_names[coef_names != "(Intercept)"]
+  
+  # 2. 因变量名
+  y_var <- all.vars(formula(model))[1]
+  
+  # 3. 提取 p 值
+  summ <- summary(model)$coefficients
+  # glm 和 lm 的 summary 都有一张 "Coefficients" 表，只是列名略有不同
+  # 通常最后一列就是 p 值
+  p_col_name <- colnames(summ)[ncol(summ)]
+  p_values <- summ[, p_col_name]
+  
+  # 4. 因变量的标准差
+  if (inherits(model, "glm")) {
+    # 使用线性预测 η 作为“潜在”因变量
+    eta <- predict(model, type = "link")
+    sd_y <- sd(eta, na.rm = TRUE)
+  } else {
+    sd_y <- sd(data[[y_var]], na.rm = TRUE)
+  }
+  
+  # 5. 针对每个自变量（包含交互项）计算 SD(X) 和标准化系数
+  res_list <- lapply(coef_names, function(term) {
+    # 处理交互项：例如 "log.year:way_num"
+    if (grepl(":", term)) {
+      vars <- strsplit(term, ":", fixed = TRUE)[[1]]
+      if (!all(vars %in% names(data))) {
+        warning("交互项变量在 data 中找不到：", term)
+        return(NULL)
+      }
+      # 交互项数值：逐行相乘
+      x_vals <- Reduce(`*`, data[vars])
+      sd_x <- sd(x_vals, na.rm = TRUE)
+    } else {
+      # 主效应
+      if (!term %in% names(data)) {
+        warning("变量在 data 中找不到：", term)
+        return(NULL)
+      }
+      sd_x <- sd(data[[term]], na.rm = TRUE)
+    }
+    
+    if (is.na(sd_x) || sd_x == 0 || is.na(sd_y) || sd_y == 0) {
+      warning("标准差为 NA 或 0，跳过变量：", term)
+      return(NULL)
+    }
+    
+    beta <- coefs[term]
+    beta_std <- beta * (sd_x / sd_y)
+    p_val <- p_values[term]
+    
+    data.frame(
+      Dependent   = y_var,
+      Predictor   = term,
+      Std_Coeff   = round(beta_std, 3),
+      P_Value     = round(p_val, 4),
+      stringsAsFactors = FALSE
+    )
+  })
+  
+  res_list <- res_list[!sapply(res_list, is.null)]
+  if (length(res_list) == 0) return(NULL)
+  do.call(rbind, res_list)
+}
+
+
+
+models <- list(m1, m3, m4,m5,m6)
+model_names <- c("m1", "m3", "m4", "m5", "m6")
+
+std_results <- lapply(seq_along(models), function(i) {
+  out <- std_coef_with_p(models[[i]], xx)
+  if (!is.null(out)) out$Model <- model_names[i]
+  out
+})
+
+# 去掉 NULL
+std_results <- std_results[!sapply(std_results, is.null)]
+
+# 合并为一个总表
+std_table <- do.call(rbind, std_results)
+
+# 调整列顺序
+std_table <- std_table[, c("Model", "Dependent", "Predictor", "Std_Coeff", "P_Value")]
+
+print(std_table)
+
+
+                    Model          Dependent         Predictor Std_Coeff P_Value
+tot.cover_qiao        m1 tot.re.cover_ruqin    tot.cover_qiao    -0.305  0.0001
+tot.richness_guan     m1 tot.re.cover_ruqin tot.richness_guan    -0.460  0.0007
+tot.richness_herb     m1 tot.re.cover_ruqin tot.richness_herb    -0.248  0.0022
+PC1                   m1 tot.re.cover_ruqin               PC1    -0.540  0.0012
+tot.richness_guan1    m3  tot.richness_herb tot.richness_guan    -0.939  0.0005
+log.year              m3  tot.richness_herb          log.year     0.647  0.0159
+log.year:way_num      m3  tot.richness_herb  log.year:way_num    -0.446  0.0089
+tot.richness_qiao     m4  tot.richness_guan tot.richness_qiao     0.382  0.0003
+log.year1             m4  tot.richness_guan          log.year     0.529  0.0000
+way_num               m4  tot.richness_guan           way_num    -0.846  0.0035
+log.year:way_num1     m4  tot.richness_guan  log.year:way_num     0.691  0.0231
+log.year2             m5  tot.richness_qiao          log.year     0.583  0.0000
+log.year:way_num2     m5  tot.richness_qiao  log.year:way_num    -0.482  0.0005
+tot.cover_qiao1       m6                PC1    tot.cover_qiao     0.293  0.0459
+log.year3             m6                PC1          log.year     0.495  0.0003
+way_num1              m6                PC1           way_num    -0.537  0.0002
+
+
+
+
+
+
+library(ggplot2)
+library(dplyr)
+
+
+#相对richness
+data <- data.frame(
+  Variable = c("log.year", "way_num", "year_way","tree_richness","tree_richness","tot.cover_qiao", "tot.cover_qiao", 
+               "soil_pc1","PC2"),
+  EffectType = c("indirect", "indirect", "indirect", "direct","indirect" 
+                 "direct", "indirect",  "direct","indirect"),
+  Value = c(-0.740, 0.191, -0.210, -0.495, -0.207,-0.338,-0.065,-0.356,-0.064))
+data <- data %>%
+  mutate(pos = ifelse(EffectType == "direct", 1, 2))
+data$Variable <- factor(data$Variable, levels = rev(c(
+  "log.year", "way_num", "tot.cover_qiao", 
+  "tot.cover_guan_all", "guan_FD", 
+  "PC2")))
+ggplot(data, aes(x = Value, y = Variable, fill = EffectType)) +
+  geom_col(position = position_stack(reverse = TRUE), width = 0.8, color = "gray40", size = 0.8) +
+  scale_fill_manual(values = c("direct" = "gray60", "indirect" = "white")) +
+  geom_vline(xintercept = 0, linetype = "dashed", color ="black", size = 1.2) +
+  scale_x_continuous(limits = c(-0.80, 0.30), breaks = seq(-0.80, 30, by = 0.20)) +
+  theme_minimal(base_size = 14) +
+  theme(
+    panel.grid = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_text(size = 12, color = "black"),
+    axis.text.x = element_text(size = 12, color = "black"),
+    axis.title.x = element_text(size = 14),
+    axis.line.x = element_line(color = "black", size = 0.8),
+    axis.ticks.x = element_line(color = "black", size = 0.8),
+    axis.ticks.length = unit(0.25, "cm"),
+    legend.position = "none"
+  ) +
+  labs(x = "Effect size")
+
